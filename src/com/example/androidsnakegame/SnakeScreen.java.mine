@@ -1,0 +1,270 @@
+package com.example.androidsnakegame;
+
+import android.widget.TextView;
+import com.example.androidsnakegame.Snake.Direction;
+import java.util.TimerTask;
+import java.util.Timer;
+import sofia.graphics.Color;
+import sofia.graphics.RectangleShape;
+import sofia.app.ShapeScreen;
+
+// -------------------------------------------------------------------------
+/**
+ * The screen class that the game will be showed on
+ *
+ * @author Sachin Yadav (sachin94)
+ * @version 2014.04.30
+ */
+public class SnakeScreen
+    extends ShapeScreen
+{
+
+    private Snake    mainSnake;
+    private Timer    snakeMoveTimer;
+    private float    cellSize;
+    private Mouse    mainMouse;
+    private int      mazeSize;
+    private TextView scoreTextView;
+    private int      score;
+
+
+    public void initialize()
+    {
+
+        score = 0;
+        mazeSize = 20;
+        float pxMazeSize = Math.min(getWidth(), getHeight());
+        cellSize = pxMazeSize / mazeSize;
+
+        mainSnake = new Snake(mazeSize, cellSize, this);
+
+        mainMouse = new Mouse(mazeSize, mainSnake, cellSize);
+
+        snakeMoveTimer = new Timer();
+
+        for (int r = 0; r < mazeSize; r++)
+        {
+            for (int c = 0; c < mazeSize; c++)
+            {
+                float x = c * cellSize;
+                float y = r * cellSize;
+                RectangleShape grid =
+                    new RectangleShape(x, y, x + cellSize, y + cellSize);
+                grid.setColor(Color.gray);
+                grid.setFillColor(Color.green);
+                add(grid);
+
+            }
+        }
+
+        add(mainSnake.getHead().data().getShape());
+        add(mainMouse.getShape());
+
+        snakeMoveTimer.schedule(new TimerTask() {
+
+            public void run()
+            {
+                timerCalled();
+            }
+
+        }, 0, 1000);
+    }
+
+
+    private void timerCalled()
+    {
+        boolean b = mainSnake.advancePosition();
+
+        if (!b)
+        {
+            snakeMoveTimer.cancel();
+
+        }
+
+
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the current mouse on the screen
+     *
+     * @return the mouse object
+     */
+    public Mouse getMouse()
+    {
+        return mainMouse;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Increases the score, removes the mouse, and adds a new random mouse
+     */
+    public void removeMouse()
+    {
+        increaseScore();
+        remove(mainMouse.getShape());
+        mainMouse = new Mouse(mazeSize, mainSnake, cellSize);
+        add(mainMouse.getShape());
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Called when the rightButton is clicked
+     */
+    public void rightButtonClicked()
+    {
+
+        BodyPart headPart = mainSnake.getHead().data();
+        BodyPart tailPart = mainSnake.getTail().data();
+        Node<BodyPart> temp = mainSnake.getHead();
+        switch (headPart.getDirection())
+        {
+            case NORTH:
+
+                headPart.setDirection(Direction.EAST);
+                tailPart.setDirection(Direction.EAST);
+
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.EAST);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.EAST);
+                break;
+            case EAST:
+                headPart.setDirection(Direction.SOUTH);
+                tailPart.setDirection(Direction.SOUTH);
+
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.SOUTH);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.SOUTH);
+
+                break;
+            case SOUTH:
+                headPart.setDirection(Direction.EAST);
+                tailPart.setDirection(Direction.EAST);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.EAST);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.EAST);
+
+                break;
+            case WEST:
+                headPart.setDirection(Direction.NORTH);
+                tailPart.setDirection(Direction.NORTH);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.NORTH);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.NORTH);
+
+                break;
+            default:
+                // purposely does nothing
+                break;
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Called when the left button gets clicked
+     */
+    public void leftButtonClicked()
+    {
+        BodyPart headPart = mainSnake.getHead().data();
+        BodyPart tailPart = mainSnake.getTail().data();
+        Node<BodyPart> temp = mainSnake.getHead();
+
+        switch (headPart.getDirection())
+        {
+            case NORTH:
+
+                headPart.setDirection(Direction.WEST);
+                tailPart.setDirection(Direction.WEST);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.WEST);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.WEST);
+
+                break;
+            case EAST:
+                headPart.setDirection(Direction.NORTH);
+                tailPart.setDirection(Direction.NORTH);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.NORTH);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.NORTH);
+
+                break;
+            case SOUTH:
+                headPart.setDirection(Direction.WEST);
+                tailPart.setDirection(Direction.WEST);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.WEST);
+                    temp = temp.next();
+                }
+                // mainSnake.changeDirection(Direction.WEST);
+
+                break;
+            case WEST:
+                headPart.setDirection(Direction.SOUTH);
+                tailPart.setDirection(Direction.SOUTH);
+                while (temp != mainSnake.getTail())
+                {
+                    temp.next().data().setDirection(Direction.SOUTH);
+                    temp = temp.next();
+                }
+
+                break;
+            default:
+                // purposely does nothing
+                break;
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Increases the score and updates the label
+     */
+    public void increaseScore()
+    {
+        score++;
+        runOnUiThread(new Runnable() {
+
+            public void run()
+            {
+                scoreTextView.setText("Score: " + score);
+            }
+
+        });
+
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the current score
+     *
+     * @return the current score
+     */
+    public int getScore()
+    {
+        return score;
+    }
+}

@@ -1,0 +1,335 @@
+package com.example.androidsnakegame;
+
+import android.graphics.Point;
+import sofia.graphics.Color;
+import sofia.graphics.RectangleShape;
+
+/**
+ * The class represents the entire snake
+ *
+ * @author Grant Golden (gronack)
+ * @author Ted Gronauer (fredg94)
+ * @author Sachin Yadav (sachin95)
+ * @version 2014.04.30
+ */
+public class Snake
+{
+    // -------------------------------------------------------------------------
+    /**
+     * Represents a direction in the grid
+     *
+     * @author Grant Golden (gronack)
+     * @author Ted Gronauer (fredg94)
+     * @author Sachin Yadav (sachin94)
+     * @version 2014.04.30
+     */
+    public enum Direction
+    {
+        /**
+         * Faces north
+         */
+        NORTH,
+        /**
+         * Faces east
+         */
+        EAST,
+        /**
+         * Faces south
+         */
+        SOUTH,
+        /**
+         * Faces west
+         */
+        WEST
+    };
+
+    private Node<BodyPart> headNode;
+    private Node<BodyPart> tailNode;
+
+    private int            gameSize;
+    private float          cellSize;
+    private SnakeScreen    mainScreen;
+
+
+    // ----------------------------------------------------------
+    /**
+     * Create a new Snake object.
+     *
+     * @param gridSize
+     *            size of the grid
+     * @param cellSize
+     *            size of each cell in the grid
+     * @param scr
+     *            the ShapeScreen that the snake will be shown on
+     */
+    public Snake(int gridSize, float cellSize, SnakeScreen scr)
+    {
+        this.cellSize = cellSize;
+        mainScreen = scr;
+
+        BodyPart head =
+            new BodyPart(new Point(gridSize / 2, gridSize / 2), Direction.NORTH);
+        float x = head.getLocation().x * cellSize;
+        float y = head.getLocation().y * cellSize;
+        RectangleShape s = new RectangleShape(x, y, x + cellSize, y + cellSize);
+        s.setFillColor(Color.black);
+        head.setShape(s);
+
+        headNode = new Node<BodyPart>(head);
+        tailNode = headNode;
+        headNode.join(tailNode);
+        gameSize = gridSize;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Called when the snake eats a mouse.
+     */
+    public void grow()
+    {
+        Point tailLocation = tailNode.data().getLocation();
+
+        Direction tailDirection = tailNode.data().getDirection();
+        BodyPart newBodyPart = new BodyPart(tailLocation, tailDirection);
+        Node<BodyPart> newBodyPartNode = new Node<BodyPart>(newBodyPart);
+
+        switch (tailDirection)
+        {
+            case NORTH:
+                newBodyPartNode.data().setLocation(
+                    tailLocation.x,
+                    tailLocation.y + 1);
+                break;
+            case EAST:
+                newBodyPartNode.data().setLocation(
+                    tailLocation.x - 1,
+                    tailLocation.y);
+                break;
+            case SOUTH:
+                newBodyPartNode.data().setLocation(
+                    tailLocation.x,
+                    tailLocation.y - 1);
+                break;
+            case WEST:
+                newBodyPartNode.data().setLocation(
+                    tailLocation.x + 1,
+                    tailLocation.y);
+                break;
+        }
+
+        if (headNode == tailNode)
+        {
+            headNode.split();
+            tailNode = newBodyPartNode;
+            headNode.join(tailNode);
+        }
+        else
+        {
+
+            tailNode.join(newBodyPartNode);
+            tailNode = newBodyPartNode;
+        }
+
+        BodyPart b = newBodyPartNode.data();
+
+        float x = b.getLocation().x * cellSize;
+        float y = b.getLocation().y * cellSize;
+        RectangleShape s = new RectangleShape(x, y, x + cellSize, y + cellSize);
+        s.setFillColor(Color.black);
+        b.setShape(s);
+        mainScreen.add(s);
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Advances the position of the snake by one
+     *
+     * @return whether the method executed successfully
+     */
+    public boolean advancePosition()
+    {
+
+        BodyPart headPart = headNode.data();
+        Point nextPoint = null;
+
+        Node<BodyPart> previousToTail = tailNode.previous();
+
+        switch (headPart.getDirection())
+        {
+            case NORTH:
+                if (headPart.getLocation().y == 0)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x,
+                        headPart.getLocation().y - 1);
+                System.out.println("north");
+                break;
+            case EAST:
+                System.out.println("east");
+                if (headPart.getLocation().x == gameSize - 1)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x + 1,
+                        headPart.getLocation().y);
+                break;
+            case SOUTH:
+                System.out.println("south");
+                if (headPart.getLocation().y == gameSize - 1)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x,
+                        headPart.getLocation().y + 1);
+                break;
+            case WEST:
+                System.out.println("west");
+                if (headPart.getLocation().x == 0)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x - 1,
+                        headPart.getLocation().y);
+                break;
+        }
+
+        if (containsPoint(nextPoint))
+        {
+            return false;
+        }
+
+        float x = nextPoint.x * cellSize;
+        float y = nextPoint.y * cellSize;
+
+        if (headNode == tailNode)
+        {
+            headNode.data().setLocation(nextPoint.x, nextPoint.y);
+            headNode.data().getShape()
+                .setPosition(x + cellSize / 2, y + cellSize / 2);
+        }
+        else
+        {
+            tailNode.data().setLocation(nextPoint.x, nextPoint.y);
+            tailNode.data().getShape()
+                .setPosition(x + cellSize / 2, y + cellSize / 2);
+            previousToTail.split();
+            tailNode.join(headNode);
+            headNode = tailNode;
+            tailNode = previousToTail;
+        }
+
+        headNode.data().getShape().setColor(Color.black);
+
+        if (headPart.getLocation().equals(mainScreen.getMouse().getLocation()))
+        {
+            mainScreen.removeMouse();
+            grow();
+        }
+
+        return true;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Checks if the passed in point is the same as any body part
+     *
+     * @param p
+     *            the point
+     * @return whether the point is contained in the snake
+     */
+    public boolean containsPoint(Point p)
+    {
+        Node<BodyPart> currentNode = headNode;
+
+        if (headNode == tailNode)
+        {
+            return currentNode.data().getLocation().equals(p);
+        }
+
+        while (currentNode.next() != null)
+        {
+            if (currentNode.data().getLocation().equals(p))
+            {
+                return true;
+            }
+            currentNode = currentNode.next();
+        }
+
+        return false;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the head node of the snake
+     *
+     * @return the head node
+     */
+    public Node<BodyPart> getHead()
+    {
+        return headNode;
+    }
+
+
+    /**
+     * Gets the tail node of the snake
+     *
+     * @return the tail node
+     */
+    public Node<BodyPart> getTail()
+    {
+        return tailNode;
+    }
+
+
+    /**
+     * removes all the shape objects from the screen
+     *
+     * @param gridSize
+     *            size of grid
+     */
+    public void resetSnake(int gridSize)
+    {
+        Node<BodyPart> currentNode = headNode;
+
+        if (headNode == tailNode)
+        {
+            mainScreen.remove(headNode.data().getShape());
+        }
+        else
+        {
+            do
+            {
+                mainScreen.remove(currentNode.data().getShape());
+                mainScreen.remove(currentNode.next().data().getShape());
+                currentNode = currentNode.next();
+            }
+            while (currentNode.next() != null);
+        }
+
+        BodyPart head =
+            new BodyPart(new Point(gridSize / 2, gridSize / 2), Direction.NORTH);
+        float x = head.getLocation().x * cellSize;
+        float y = head.getLocation().y * cellSize;
+        RectangleShape s = new RectangleShape(x, y, x + cellSize, y + cellSize);
+        s.setFillColor(Color.black);
+        head.setShape(s);
+
+        headNode = new Node<BodyPart>(head);
+        tailNode = headNode;
+        headNode.join(tailNode);
+    }
+
+}

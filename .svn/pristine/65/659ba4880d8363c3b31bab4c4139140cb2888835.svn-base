@@ -1,0 +1,191 @@
+package com.example.androidsnakegame;
+
+import android.graphics.Point;
+import sofia.graphics.Color;
+import sofia.graphics.RectangleShape;
+
+public class Snake
+{
+    public enum Direction
+    {
+        NORTH,
+        EAST,
+        SOUTH,
+        WEST,
+        BODY
+    };
+
+    private Node<BodyPart> headNode;
+    private Node<BodyPart> tailNode;
+
+    private int            gameSize;
+    private float          cellSize;
+    private SnakeScreen    mainScreen;
+
+
+    public Snake(int gridSize, float cellSize, SnakeScreen scr)
+    {
+        this.cellSize = cellSize;
+        mainScreen = scr;
+
+        BodyPart head =
+            new BodyPart(new Point(gridSize / 2, gridSize / 2), Direction.NORTH);
+        float x = head.getLocation().x * cellSize;
+        float y = head.getLocation().y * cellSize;
+        RectangleShape s = new RectangleShape(x, y, x + cellSize, y + cellSize);
+        s.setFillColor(Color.black);
+        head.setShape(s);
+
+        headNode = new Node<BodyPart>(head);
+        tailNode = headNode;
+        headNode.join(tailNode);
+        gameSize = gridSize;
+    }
+
+
+    public void grow()
+    {
+        Point tailLocation = tailNode.data().getLocation();
+
+        Direction tailDirection = tailNode.data().getDirection();
+        BodyPart newBodyPart = new BodyPart(tailLocation, tailDirection);
+        Node<BodyPart> newBodyPartNode = new Node<BodyPart>(newBodyPart);
+
+        switch (tailDirection)
+        {
+            case NORTH:
+                newBodyPartNode.data().setLocation(tailLocation.x, tailLocation.y + 1);
+                break;
+            case EAST:
+                newBodyPartNode.data().setLocation(tailLocation.x - 1, tailLocation.y);
+                break;
+            case SOUTH:
+                newBodyPartNode.data().setLocation(tailLocation.x, tailLocation.y - 1);
+                break;
+            case WEST:
+                newBodyPartNode.data().setLocation(tailLocation.x + 1, tailLocation.y);
+                break;
+        }
+
+        if(headNode == tailNode) {
+            headNode.split();
+            tailNode = newBodyPartNode;
+            headNode.join(tailNode);
+        }else {
+
+            tailNode.join(newBodyPartNode);
+            tailNode = newBodyPartNode;
+        }
+
+        BodyPart b = newBodyPartNode.data();
+
+        float x = b.getLocation().x * cellSize;
+        float y = b.getLocation().y * cellSize;
+        RectangleShape s = new RectangleShape(x, y, x + cellSize, y + cellSize);
+        s.setFillColor(Color.black);
+        b.setShape(s);
+        mainScreen.add(s);
+    }
+
+
+    public boolean advancePosition(float cellSize)
+    {
+
+        BodyPart headPart = headNode.data();
+        Point nextPoint = null;
+
+        switch (headPart.getDirection())
+        {
+            case NORTH:
+                if (headPart.getLocation().y == 0)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x,
+                        headPart.getLocation().y - 1);
+                break;
+            case EAST:
+                if (headPart.getLocation().x == gameSize - 1)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x + 1,
+                        headPart.getLocation().y);
+                break;
+            case SOUTH:
+                if (headPart.getLocation().y == gameSize - 1)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x,
+                        headPart.getLocation().y + 1);
+                break;
+            case WEST:
+                if (headPart.getLocation().x == 0)
+                {
+                    return false;
+                }
+                nextPoint =
+                    new Point(
+                        headPart.getLocation().x - 1,
+                        headPart.getLocation().y);
+                break;
+        }
+
+        float x = nextPoint.x * cellSize;
+        float y = nextPoint.y * cellSize;
+
+        if (headNode == tailNode)
+        {
+            headNode.data().setLocation(nextPoint.x, nextPoint.y);
+            headNode.data().getShape()
+                .setPosition(x + cellSize / 2, y + cellSize / 2);
+            // tailNode = headNode;
+        }
+        else
+        {
+            tailNode = tailNode.previous();
+        }
+
+        if(headPart.getLocation().equals(mainScreen.getMouse().getLocation())){
+            grow();
+        }
+
+        return true;
+    }
+
+
+    public boolean containsPoint(Point p)
+    {
+        Node<BodyPart> currentNode = headNode;
+
+        if (headNode == tailNode)
+        {
+            return currentNode.data().getLocation().equals(p);
+        }
+
+        while (currentNode.next() != null)
+        {
+            if (currentNode.data().getLocation().equals(p))
+            {
+                return true;
+            }
+            currentNode = currentNode.next();
+        }
+
+        return false;
+    }
+
+
+    public Node<BodyPart> getHead()
+    {
+        return headNode;
+    }
+
+}
